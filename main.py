@@ -1,39 +1,17 @@
 import logging
+from flask import Flask, request
+from scraper import scraping_tennis
 
-import functions_framework
+app = Flask(__name__)
 
-from deprecated import deprecated
-
-logging.getLogger().setLevel(logging.INFO)
-
-
-from astro.utils.scraper import scraping_tennis
-
-def cloud_run(function_name: str, *args):
-    """
-    Request Handler for Cloud Run Job Request
-    Args:
-        function_name: Name of function
-        *args: Arguments needed for function
-    Returns:
-        response: String responses
-    """
-
+@app.route("/", methods=["POST"])
+def run_scraper():
     try:
-        if function_name == 'scraping-tennis':
-            response = scraping_tennis()
-        else:
-            raise ModuleNotFoundError(f'No {function_name} module in Cloud Run!')
-
-        return response
+        response = scraping_tennis()
+        return {"status": "success", "message": response}, 200
     except Exception as exc:
-        raise RuntimeError(exc)
+        logging.error(exc)
+        return {"status": "error", "message": str(exc)}, 500
 
-
-if __name__ == '__main__':
-    import sys
-
-    function_name = sys.argv[1]
-    args = sys.argv[2:] or []
-
-    cloud_run(function_name, args)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8080)
